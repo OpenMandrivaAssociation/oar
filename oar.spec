@@ -315,12 +315,12 @@ rm -f %{_sysconfdir}/cron.hourly/oarcache
 %attr(755,root,root) %{_bindir}/oarsub
 %attr(755,root,root) %{_bindir}/oarstat
 %attr(755,root,root) %{_bindir}/oarresume
-%{_mandir}/man1/oardel.1.bz2
-%{_mandir}/man1/oarnodes.1.bz2
-%{_mandir}/man1/oarresume.1.bz2
-%{_mandir}/man1/oarstat.1.bz2
-%{_mandir}/man1/oarsub.1.bz2
-%{_mandir}/man1/oarhold.1.bz2
+%{_mandir}/man1/oardel.*
+%{_mandir}/man1/oarnodes.*
+%{_mandir}/man1/oarresume.*
+%{_mandir}/man1/oarstat.*
+%{_mandir}/man1/oarsub.*
+%{_mandir}/man1/oarhold.*
 
 %files node
 %doc README
