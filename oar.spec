@@ -14,7 +14,6 @@ Source1:	oar_job.sh
 Source2:	oar-server
 Patch0:		oar_1.6_rc2.patch
 Patch1: 	oar_makefile.patch
-BuildRoot:	%{_tmppath}/oar-%{version}-%{release}-build
 BuildRequires:	perl sed make
 
 %description 
