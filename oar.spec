@@ -115,7 +115,7 @@ EOF
 
 %make PREFIX=$RPM_BUILD_ROOT/usr OARUSER=root OARGROUP=root \
 OARCONFDIR=$RPM_BUILD_ROOT/%{_sysconfdir} \
-OARHOMEDIR=$RPM_BUILD_ROOT/%{_localstatedir}/oar \
+OARHOMEDIR=$RPM_BUILD_ROOT/%{_localstatedir}/lib/oar \
 OARCONFDIR=$RPM_BUILD_ROOT/%{_sysconfdir} \
 PREFIX=$RPM_BUILD_ROOT/usr \
 DOCDIR=$RPM_BUILD_ROOT/usr/share/doc/oar-%{version} \
@@ -148,8 +148,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %pre common
 groupadd oar &> /dev/null || true
-useradd -d %{_localstatedir}/oar -g oar -p "123456" oar &> /dev/null || true
-chown oar.oar %{_localstatedir}/oar -R &> /dev/null
+useradd -d %{_localstatedir}/lib/oar -g oar -p "123456" oar &> /dev/null || true
+chown oar.oar %{_localstatedir}/lib/oar -R &> /dev/null
 touch /var/log/oar.log && chown oar /var/log/oar.log && chmod 644 /var/log/oar.log || true
 if [ ! -e /etc/sudoers ]; then
 	echo "Error: No /etc/sudoers file. Is sudo installed ?" 
@@ -210,15 +210,15 @@ groupdel oar &> /dev/null || true
 rm -rf /var/log/oar.log || true
 
 %post server
-if [ ! -e %{_localstatedir}/oar/.ssh/id_dsa -o \
-	! -e %{_localstatedir}/oar/.ssh/id_dsa.pub -o \
+if [ ! -e %{_localstatedir}/lib/oar/.ssh/id_dsa -o \
+	! -e %{_localstatedir}/lib/oar/.ssh/id_dsa.pub -o \
 	! -e /var/lib/oar/.ssh/authorized_keys ]; then
-	mkdir -p %{_localstatedir}/oar/.ssh 
-	ssh-keygen -t dsa -q -f %{_localstatedir}/oar/.ssh/id_dsa -N '' || true
-	cp %{_localstatedir}/oar/.ssh/id_dsa.pub %{_localstatedir}/oar/.ssh/authorized_keys || true
-	chmod 600 %{_localstatedir}/oar/.ssh/authorized_keys
+	mkdir -p %{_localstatedir}/lib/oar/.ssh 
+	ssh-keygen -t dsa -q -f %{_localstatedir}/lib/oar/.ssh/id_dsa -N '' || true
+	cp %{_localstatedir}/lib/oar/.ssh/id_dsa.pub %{_localstatedir}/lib/oar/.ssh/authorized_keys || true
+	chmod 600 %{_localstatedir}/lib/oar/.ssh/authorized_keys
 fi
-cat <<EOF > %{_localstatedir}/oar/.ssh/config || true
+cat <<EOF > %{_localstatedir}/lib/oar/.ssh/config || true
 	Host *
 	ForwardX11 no
 	StrictHostKeyChecking no
@@ -330,12 +330,12 @@ rm -f %{_sysconfdir}/cron.hourly/oarcache
 %attr(755,root,root) %{perl_vendorlib}/oarexec
 %attr(755,root,root) %{perl_vendorlib}/oarkill
 %attr(755,root,root) %{perl_vendorlib}/oarexecuser.sh
-%attr(755,root,root) %{_localstatedir}/oar/oar_prologue
-%attr(755,root,root) %{_localstatedir}/oar/oar_epilogue
-%attr(755,root,root) %{_localstatedir}/oar/oar_diffuse_script
-%attr(755,root,root) %{_localstatedir}/oar/oar_epilogue_local
-%attr(755,root,root) %{_localstatedir}/oar/oar_prologue_local
-%attr(755,root,root) %{_localstatedir}/oar/lock_user.sh
+%attr(755,root,root) %{_localstatedir}/lib/oar/oar_prologue
+%attr(755,root,root) %{_localstatedir}/lib/oar/oar_epilogue
+%attr(755,root,root) %{_localstatedir}/lib/oar/oar_diffuse_script
+%attr(755,root,root) %{_localstatedir}/lib/oar/oar_epilogue_local
+%attr(755,root,root) %{_localstatedir}/lib/oar/oar_prologue_local
+%attr(755,root,root) %{_localstatedir}/lib/oar/lock_user.sh
 
 %files draw-gantt
 %doc README
