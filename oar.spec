@@ -1,5 +1,5 @@
 %define version 1.6.2
-%define release %mkrel 12
+%define release %mkrel 14
 %define wwwdir /var/www/html
 	
 Summary:	OAR Batch Scheduler
