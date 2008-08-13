@@ -223,14 +223,13 @@ cat <<EOF > %{_localstatedir}/lib/oar/.ssh/config || true
 	StrictHostKeyChecking no
 EOF
 chown oar.oar /var/lib/oar/.ssh -R || true
-chkconfig --add oar-server
+%_post_service oar-server
 echo "- don't forget to create the OAR MySQL database"
 echo "%{_sbindir}/oar_db_init" 
 echo "- Morever you have to edit and adjust your configuration in %{_sysconfdir}/oar.conf"
 
 %preun server
-service oar-server stop || true
-chkconfig --del oar-server
+%_preun_service oar-server
 
 %post draw-gantt
 usermod -G "`id -Gn apache | sed 's/ /,/g'`,oar" apache || true
