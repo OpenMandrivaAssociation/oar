@@ -32,7 +32,7 @@ This package installs the server part or the OAR batch scheduler
 %package server
 Summary:	OAR batch scheduler server package
 Group:		System/Servers
-Requires:	oar-common = %version-%release, mysql, fping, nmap
+Requires:	oar-common = %version-%release, fping, nmap
 BuildArch: 	noarch
 
 %description server
