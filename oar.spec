@@ -2,10 +2,10 @@
 %define release %mkrel 14
 %define wwwdir /var/www/html
 	
-Summary:	OAR Batch Scheduler
 Name:		oar
 Version:	%{version}
 Release:	%{release}
+Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
 Url:		http://oar.imag.fr
@@ -14,8 +14,7 @@ Source1:	oar_job.sh
 Source2:	oar-server
 Patch0:		oar_1.6_rc2.patch
 Patch1: 	oar_makefile.patch
-BuildRoot:	%{_tmppath}/oar-%{version}-%{release}-build
-BuildRequires:	perl sed make
+BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description 
 This is OAR Batch Scheduler
@@ -24,7 +23,7 @@ This is OAR Batch Scheduler
 Summary:	OAR batch scheduler common package
 Group:		System/Servers
 BuildArch: 	noarch
-Requires:	sudo, perl, perl-DBD-mysql, openssh-clients, openssh-server
+Requires:	sudo, perl-DBD-mysql, openssh-clients, openssh-server
 provides: 	perl(oar_iolib)
 
 %description common
