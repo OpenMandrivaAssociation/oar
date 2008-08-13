@@ -1,5 +1,5 @@
-%define version 1.6.2
-%define release %mkrel 14
+%define version 2.3.1
+%define release %mkrel 1
 %define wwwdir /var/www/html
 	
 Name:		oar
@@ -9,11 +9,14 @@ Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
 Url:		http://oar.imag.fr
-Source0:	oar_%{version}-rc2.tar.gz
-Source1:	oar_job.sh
-Source2:	oar-server
-Patch0:		oar_1.6_rc2.patch
-Patch1: 	oar_makefile.patch
+Source0:	https://gforge.inria.fr/frs/download.php/5170/%{name}-%{version}.tar.gz
+Source1:	oar-server.init
+Source2:	oar-node.init
+Source3:	oar-server.sysconfig
+Source4:	oar-node.sysconfig
+Patch1: 	oar-2.3.1-fix-install.patch
+Patch2: 	oar-2.3.1-fix-documentation-build.patch
+BuildRequires:	python-docutils
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description 
@@ -24,7 +27,6 @@ Summary:	OAR batch scheduler common package
 Group:		System/Servers
 BuildArch: 	noarch
 Requires:	sudo, perl-DBD-mysql, openssh-clients, openssh-server
-provides: 	perl(oar_iolib)
 
 %description common
 This package installs the server part or the OAR batch scheduler
@@ -32,11 +34,21 @@ This package installs the server part or the OAR batch scheduler
 %package server
 Summary:	OAR batch scheduler server package
 Group:		System/Servers
-Requires:	oar-common = %version-%release, fping, nmap
-BuildArch: 	noarch
+Requires:	oar-common = %version-%release
+Requires:	fping
+Requires:	nmap
 
 %description server
 This package installs the server part or the OAR batch scheduler
+
+%package admin
+Summary:	OAR batch scheduler administration tools package
+Group:		System/Servers
+Requires:	oar-common = %version-%release
+
+%description admin
+This package installs some useful tools to help the administrator of a oar
+server (resources manipulation, admission rules edition, ...)
 
 %package user
 Summary:	OAR batch scheduler node package
@@ -51,96 +63,136 @@ This package install the submition and query part or the OAR batch scheduler
 Summary:	OAR batch scheduler node package
 Group:		System/Servers
 Requires:	oar-common = %version-%release
-BuildArch: 	noarch
 
 %description node
 This package installs the execution node part or the OAR batch scheduler
 
-%package draw-gantt
-Summary:	OAR batch scheduler Gantt reservation diagram
-Group:		System/Servers
-Requires:	oar-common = %version-%release, oar-user = %version-%release, monika
-BuildArch: 	noarch
-requires: apache
-
-%description draw-gantt
-This package install the OAR batch scheduler Gantt reservation diagram CGI
-
-%package desktop-computing-cgi
-Summary:	OAR batch scheduler desktop computing CGI
+%package web-status
+Summary:	OAR batch scheduler web-status package
 Group:		System/Servers
 Requires:	oar-common = %version-%release
-BuildArch: 	noarch
-requires: apache
+Requires:	oar-user = %version-%release
+requires:   apache
 
-%description desktop-computing-cgi
-This package install the OAR batch scheduler desktop computing CGI
-
-%package desktop-computing-agent
-Summary:	OAR batch scheduler desktop computing Agent
-Group:		System/Servers
-Requires:	oar-common = %version-%release
-BuildArch: 	noarch
-requires: apache
-
-%description desktop-computing-agent
-This package install the OAR batch scheduler desktop computing Agent
+%description web-status
+This package installs the OAR batch scheduler Gantt reservation diagram CGI:
+DrawGantt and the instant cluster state visualization CGI: Monika
 
 %package doc
 Summary:	OAR batch scheduler documentation package
 Group:		Books/Computer books
-BuildArch: 	noarch
 
 %description doc
 This package install some documentation for OAR batch scheduler
 
 %prep
-%setup -q -n 1.6
-%patch0 -p1
+%setup -q
 %patch1 -p1
+%patch2 -p1
+
 %build
+cd Docs/documentation
+%make
 
 %install
-%__rm -rf %buildroot
-# Dumb install needed to create file lists
-mkdir -p $RPM_BUILD_ROOT/var/lib/oar
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/profile.d/
+%__rm -rf %{buildroot}
 
-#/usr/lib/perl5/vendor_perl/5.8.7/"
-cat > $RPM_BUILD_ROOT/%{_sysconfdir}/profile.d/oar.sh <<EOF
-#!/bin/sh
-export OARDIR="%{perl_vendorlib}" 
+%__make common configuration libs doc-install server dbinit node user draw-gantt monika www-conf tools \
+    OARUSER=oar \
+    PREFIX=%{buildroot}%{_prefix} \
+    OARCONFDIR=%{buildroot}%{_sysconfdir}/%{name} \
+    OARDIR=%{buildroot}%{_datadir}/%{name} \
+    DOCDIR=%{buildroot}%{_docdir}/%{name} \
+    MANDIR=%{buildroot}%{_mandir} \
+    WWWDIR=%{buildroot}/var/www/%{name} \
+    CGIDIR=%{buildroot}/var/www/%{name}
+
+perl -pi \
+    -e 's|^#OAR_RUNTIME_DIRECTORY=.*|OAR_RUNTIME_DIRECTORY="/var/lib/oar"|;' \
+    -e 's|^#OPENSSH_CMD=.*|OPENSSH_CMD="/usr/bin/ssh -p 6667"|;' \
+     %{buildroot}%{_sysconfdir}/%{name}/oar.conf
+
+# apache configuration
+install -d -m 755 %{buildroot}%{_webappconfdir}
+cat > %{buildroot}%{_webappconfdir}/%{name}.conf <<EOF
+Alias /monika %{_var}/www/%{name}/monika
+Alias /drawgantt %{_var}/www/%{name}/drawgantt
+
+<Directory %{_var}/www/%{name}/monika>
+    Options ExecCGI
+    DirectoryIndex monika.cgi
+    Allow from all
+</Directory>
+
+<Directory %{_var}/www/%{name}/drawgantt>
+    Options ExecCGI
+    DirectoryIndex drawgantt.cgi
+    Allow from all
+</Directory>
 EOF
 
-%make PREFIX=$RPM_BUILD_ROOT/usr OARUSER=root OARGROUP=root \
-OARCONFDIR=$RPM_BUILD_ROOT/%{_sysconfdir} \
-OARHOMEDIR=$RPM_BUILD_ROOT/%{_localstatedir}/lib/oar \
-OARCONFDIR=$RPM_BUILD_ROOT/%{_sysconfdir} \
-PREFIX=$RPM_BUILD_ROOT/usr \
-DOCDIR=$RPM_BUILD_ROOT/usr/share/doc/oar-%{version} \
-MANDIR=$RPM_BUILD_ROOT/usr/share/man \
-OARDIR=$RPM_BUILD_ROOT/%{perl_vendorlib} \
-BINDIR=$RPM_BUILD_ROOT/%{_bindir} \
-SBINDIR=$RPM_BUILD_ROOT/%{_sbindir} \
-WWWDIR=$RPM_BUILD_ROOT/%{wwwdir} \
-CGIDIR=$RPM_BUILD_ROOT/var/www/cgi-bin \
-BINLINKPATH=%{perl_vendorlib} \
-SBINLINKPATH=%{perl_vendorlib} \
-doc common configuration server dbinit \
-node user draw-gantt desktop-computing-cgi desktop-computing-agent
+rm -f %{buildroot}%{_sysconfdir}/%{name}/apache.conf
+install -d -m 755 %{buildroot}%{_var}/www/%{name}/drawgantt
+install -d -m 755 %{buildroot}%{_var}/lib/%{name}/drawgantt
+install -d -m 755 %{buildroot}%{_var}/www/%{name}/monika
+pushd %{buildroot}%{_var}/www/%{name}
+mv drawgantt.cgi drawgantt
+mv monika.cgi monika
+mv userInfos.cgi monika
+mv monika.css monika
+pushd drawgantt
+rmdir cache
+ln -sf ../../../lib/%{name}/drawgantt cache
+popd
+popd
 
-perl -i -pe 's#^OARDIR=.*#OARDIR=%{perl_vendorlib}/#' $RPM_BUILD_ROOT/%{perl_vendorlib}/sudowrapper.sh
-perl -i -pe 's#^(path_cache_directory\s*=\s*).*#$1/%{wwwdir}/DrawGantt/cache#' $RPM_BUILD_ROOT/%{perl_vendorlib}/oar/sudowrapper.sh
-perl -i -pe 's#^OARUSER=.*#OARUSER=oar#' $RPM_BUILD_ROOT/%{perl_vendorlib}/sudowrapper.sh
-# install oar-server service extra files
-cp rpm/oar-server $RPM_BUILD_ROOT/%{_sbindir}/oar-server
-mkdir -p $RPM_BUILD_ROOT/%{_initrddir}
-cp %{SOURCE2} $RPM_BUILD_ROOT/%{_initrddir}/oar-server
+perl -pi -e 's|^web_root.*|web_root: "%{_var}/www/%{name}"|' \
+    %{buildroot}%{_sysconfdir}/%{name}/monika.conf
+perl -pi -e 's|^css_path.*|css_path = /monika/monika.css|' \
+    %{buildroot}%{_sysconfdir}/%{name}/drawgantt.conf
 
-perl -i -pe 's#oarstatCmd.*#oarstatCmd=%{perl_vendorlib}/oarstat#' $RPM_BUILD_ROOT/%{_sysconfdir}/DrawGantt.conf
-perl -i -pe 's#path_cache_directory.*#path_cache_directory=/var/www/html/DrawGantt/cache/#' $RPM_BUILD_ROOT/%{_sysconfdir}/DrawGantt.conf
 
-mv $RPM_BUILD_ROOT/%{perl_vendorlib}/deploy_nodes.sh $RPM_BUILD_ROOT/%{_sbindir}/deploy_nodes.sh
+install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
+cat > %{buildroot}%{_sysconfdir}/logrotate.d/%{name}.conf <<EOF
+/var/log/oar.log {
+    daily
+    missingok
+    notifempty
+}
+EOF
+
+install -d -m 755 %{buildroot}%{_sysconfdir}/cron.d
+cat > %{buildroot}%{_sysconfdir}/cron.d/%{name}-server <<EOF
+0 * * * * root /usr/share/oar/oaraccounting
+}
+EOF
+cat > %{buildroot}%{_sysconfdir}/cron.d/%{name}-node <<EOF
+0 * * * * root /usr/share/oar/oarnodecheckrun
+}
+EOF
+
+install -d -m 755 %{buildroot}%{_initrddir}
+install -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/oar-server
+install -m 755 %{SOURCE2} %{buildroot}%{_initrddir}/oar-node
+install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
+install -m 755 %{SOURCE3} %{buildroot}%{_sysconfdir}/sysconfig/oar-server
+install -m 755 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/oar-node
+
+cat > %{buildroot}%{_sbindir}/oar-server <<'EOF'
+#!/bin/sh
+
+%{_sbindir}/Almighty $* &
+jobs -p  > /var/run/`basename $0`.pid
+EOF
+
+install -d -m 755 %{buildroot}%{_var}/lib/oar
+install -d -m 755 %{buildroot}%{_var}/lib/oar/.ssh
+install -d -m 755 %{buildroot}%{_var}/lib/oar/checklogs
+cat > %{buildroot}%{_var}/lib/oar/.ssh/config <<EOF
+	Host *
+	ForwardX11 no
+	StrictHostKeyChecking no
+EOF
 
 cat > README.urpmi <<EOF
 Post-installation instructions
@@ -149,226 +201,194 @@ You have to create the MySQL database, using %{_sbindir}/oar_db_init.
 EOF
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %pre common
-groupadd oar &> /dev/null || true
-useradd -d %{_localstatedir}/lib/oar -g oar -p "123456" oar &> /dev/null || true
-chown oar.oar %{_localstatedir}/lib/oar -R &> /dev/null
-touch /var/log/oar.log && chown oar /var/log/oar.log && chmod 644 /var/log/oar.log || true
-if [ ! -e /etc/sudoers ]; then
-	echo "Error: No /etc/sudoers file. Is sudo installed ?" 
-	exit 1
-fi
-perl -e '
-use Fcntl;
-my $sudoers = "/etc/sudoers";
-my $sudoerstmp = "/etc/sudoers.tmp";
-my $oar_tag="# DO NOT REMOVE, needed by OAR packages";
-my $struct=pack("ssll", F_WRLCK, SEEK_CUR, 0, 0);
-sysopen (SUDOERS, $sudoers, O_RDWR|O_CREAT, 0440) or die "sysopen $sudoers: $!";
-fcntl(SUDOERS, F_SETLK, $struct) or die "fcntl: $!";
-sysopen (SUDOERSTMP, "$sudoerstmp", O_RDWR|O_CREAT, 0440) or die "sysopen $sudoerstmp: $!";
-print SUDOERSTMP grep (!/$oar_tag/, <SUDOERS>);
-print SUDOERSTMP <<EOF;
-##BEGIN$oar_tag
-apache ALL=(pov) NOPASSWD: ALL
-apache ALL= (oar) NOPASSWD: %{perl_vendorlib}/oarstat
-apache ALL= (oar) NOPASSWD: %{perl_vendorlib}/oarnodesetting
-apache ALL= (oar) NOPASSWD: %{perl_vendorlib}/oarproperty
-apache ALL= (oar) NOPASSWD: %{perl_vendorlib}/oarnodes
-apache ALL= (root) NOPASSWD: /usr/sbin/arping
+%_pre_useradd %{name} %{_var}/lib/%{name} %{_datadir}/%{name}/oarsh_shell
+%create_ghostfile /var/log/oar.log oar oar 644
 
-Defaults:%oar env_keep="OARDIR PWD"
-Defaults:root env_keep="OARDIR PWD"
-Cmnd_Alias OARCMD = %{perl_vendorlib}/oarnodes, %{perl_vendorlib}/oarstat, %{perl_vendorlib}/oarsub, %{perl_vendorlib}/oardel, %{perl_vendorlib}/oarhold, %{perl_vendorlib}/oarnotify, %{perl_vendorlib}/oarresume, %{perl_vendorlib}/oar-cgi, %{perl_vendorlib}/oarfetch $oar_tag
-ALL ALL=(oar) NOPASSWD: OARCMD $oar_tag
-oar ALL=(ALL) NOPASSWD: ALL $oar_tag
-##END$oar_tag
-EOF
-close SUDOERSTMP or die "close $sudoerstmp: $!";
-rename "/etc/sudoers.tmp", "/etc/sudoers" or die "rename: $!";
-close SUDOERS or die "close $sudoers: $!";
-'
-
-%preun common
-if [ ! -e /etc/sudoers ]; then
-	echo "Error: No /etc/sudoers file. Is sudo installed ?" 
-	exit 1
-fi
-perl -e '
-use Fcntl;
-my $sudoers = "/etc/sudoers";
-my $sudoerstmp = "/etc/sudoers.tmp";
-my $oar_tag="# DO NOT REMOVE, needed by OAR package";
-my $struct=pack("ssll", F_WRLCK, SEEK_CUR, 0, 0);
-sysopen (SUDOERS, $sudoers, O_RDWR|O_CREAT, 0440) or die "sysopen $sudoers: $!";
-fcntl(SUDOERS, F_SETLK, $struct) or die "fcntl: $!";
-sysopen (SUDOERSTMP, "$sudoerstmp", O_RDWR|O_CREAT, 0440) or die "sysopen $sudoerstmp: $!";
-print SUDOERSTMP grep (!/$oar_tag/, <SUDOERS>);
-close SUDOERSTMP or die "close $sudoerstmp: $!";
-rename "/etc/sudoers.tmp", "/etc/sudoers" or die "rename: $!";
-close SUDOERS or die "close $sudoers: $!";
-'
-userdel oar &> /dev/null || true
-groupdel oar &> /dev/null || true
-rm -rf /var/log/oar.log || true
+%postun common
+%_postun_userdel %{name}
 
 %post server
-if [ ! -e %{_localstatedir}/lib/oar/.ssh/id_dsa -o \
-	! -e %{_localstatedir}/lib/oar/.ssh/id_dsa.pub -o \
-	! -e /var/lib/oar/.ssh/authorized_keys ]; then
-	mkdir -p %{_localstatedir}/lib/oar/.ssh 
-	ssh-keygen -t dsa -q -f %{_localstatedir}/lib/oar/.ssh/id_dsa -N '' || true
-	cp %{_localstatedir}/lib/oar/.ssh/id_dsa.pub %{_localstatedir}/lib/oar/.ssh/authorized_keys || true
-	chmod 600 %{_localstatedir}/lib/oar/.ssh/authorized_keys
+if [ $1 = 1 ]; then
+    cd %{_var}/lib/%{name}/.ssh
+    if [ ! -e id_dsa.pub -o ! -e id_dsa.pub -o ! -e authorized_keys ]; then
+        ssh-keygen -t dsa -q -f id_dsa -N ''
+        cp id_dsa.pub authorized_keys
+        chown oar.oar id_dsa id_dsa.pub authorized_keys
+    fi
+    cd -
 fi
-cat <<EOF > %{_localstatedir}/lib/oar/.ssh/config || true
-	Host *
-	ForwardX11 no
-	StrictHostKeyChecking no
-EOF
-chown oar.oar /var/lib/oar/.ssh -R || true
 %_post_service oar-server
 
 %preun server
 %_preun_service oar-server
 
-%post draw-gantt
-usermod -G "`id -Gn apache | sed 's/ /,/g'`,oar" apache || true
-mkdir -p %{wwwdir}/DrawGantt/cache && chown apache.apache %{wwwdir}/DrawGantt/cache || true
+%post node
+# create oar sshd keys
+if [ ! -f %{_sysconfdir}/%{name}/oar_ssh_host_rsa_key ]; then
+    rm -f %{_sysconfdir}/%{name}/oar_ssh_host_rsa_key.pub
+    cp %{_sysconfdir}/ssh/ssh_host_rsa_key \
+        %{_sysconfdir}/%{name}/oar_ssh_host_rsa_key
+    cp %{_sysconfdir}/ssh/ssh_host_rsa_key.pub \
+        %{_sysconfdir}/%{name}/oar_ssh_host_rsa_key.pub
+fi
 
-%preun draw-gantt
-usermod -G "`id -Gn apache | sed 's/oar//;s/^ //;s/ $//;s/ \+/,/g'`" apache || true
-rm -rf %{wwwdir}/DrawGantt/cache || true
+if [ ! -f %{_sysconfdir}/%{name}/oar_ssh_host_dsa_key ]; then
+    rm -f %{_sysconfdir}/%{name}/oar_ssh_host_dsa_key.pub
+    cp %{_sysconfdir}/ssh/ssh_host_dsa_key \
+        %{_sysconfdir}/%{name}/oar_ssh_host_dsa_key
+    cp %{_sysconfdir}/ssh/ssh_host_dsa_key.pub \
+        %{_sysconfdir}/%{name}/oar_ssh_host_dsa_key.pub
+fi
 
-%post desktop-computing-cgi
-usermod -G "`id -Gn apache | sed 's/ /,/g'`,oar" apache || true
-ln -sf %{_sbindir}/oarcache %{_sysconfdir}/cron.hourly/oarcache
+%_post_service oar-node
 
-%preun desktop-computing-cgi
-usermod -G "`id -Gn apache | sed 's/oar//;s/^ //;s/ $//;s/ \+/,/g'`" apache || true
-rm -f %{_sysconfdir}/cron.hourly/oarcache
+%preun node
+%_preun_service oar-node
 
+%post web-status
+%_post_webapp
+
+%preun web-status
+%_postun_webapp
 
 %files common
-%doc README PACKAGING INSTALL COPYING CHANGELOG AUTHORS
 %defattr(-,root,root)
-%config(noreplace) %attr(644,root,root) %{_sysconfdir}/oar.conf
-%{perl_vendorlib}/sudowrapper.sh
-%{perl_vendorlib}/oar_conflib.pm
-%{perl_vendorlib}/oar_iolib.pm
-%{perl_vendorlib}/oar_Judas.pm
-%{perl_vendorlib}/oar_Tools.pm
-%attr(755,root,root) %{perl_vendorlib}/bipbip
-%{perl_vendorlib}/ping_checker.pm
-%attr(755,root,root) %{perl_vendorlib}/oarnodesetting
-%attr(755,root,root) %{_bindir}/oarnodesetting
-%attr(755,root,root) %{perl_vendorlib}/oarproperty
-%attr(755,root,root) %{_bindir}/oarproperty
-%{perl_vendorlib}/oarversion.pm
-%attr(755,root,root) %{_sysconfdir}/profile.d/oar.sh
+%config(noreplace) %{_sysconfdir}/%{name}/oar.conf
+%config(noreplace) %{_sysconfdir}/logrotate.d/%{name}.conf
+%{_sbindir}/oarnodesetting
+%{_bindir}/oarcp
+%{_bindir}/oarsh
+%{_datadir}/%{name}/oar_Judas.pm
+%{_datadir}/%{name}/oar_Tools.pm
+%{_datadir}/%{name}/oar_conflib.pm
+%{_datadir}/%{name}/oar_iolib.pm
+%{_datadir}/%{name}/oar_resource_tree.pm
+%{_datadir}/%{name}/oardodo/oardodo
+%{_datadir}/%{name}/oarnodesetting
+%{_datadir}/%{name}/oarnodesetting_ssh
+%{_datadir}/%{name}/oarsh
+%{_datadir}/%{name}/oarsh_oardo
+%{_datadir}/%{name}/oarversion.pm
+%{_datadir}/%{name}/sentinelle.pl
+%{_datadir}/%{name}/oarsh_shell
+%{_mandir}/man1/oarcp.1*
+%{_mandir}/man1/oarsh.1*
+%{_mandir}/man1/oarnodesetting.1*
+%dir %attr(-,oar,oar) %{_var}/lib/oar
 
 %files server
 %doc README README.urpmi
 %defattr(-,root,root)
-%attr(755,root,root) %{_sbindir}/oar-server
-%attr(755,root,root) %{_sbindir}/deploy_nodes.sh
-%attr(755,root,root) %{_initrddir}/oar-server
-%attr(755,root,root) %{_sbindir}/Almighty
-%attr(755,root,root) %{_sbindir}/oar_db_init
-%attr(755,root,root) %{_bindir}/oarnotify
-%attr(755,root,root) %{_sbindir}/oarremovenode
-%attr(755,root,root) %{_bindir}/oaraccounting
-%{perl_vendorlib}/oar_db_init
-%{perl_vendorlib}/oar_jobs.sql
-%attr(755,root,root) %{perl_vendorlib}/Leon
-%attr(755,root,root) %{perl_vendorlib}/Almighty
-%attr(755,root,root) %{perl_vendorlib}/runner
-%attr(755,root,root) %{perl_vendorlib}/sarko
-%attr(755,root,root) %{perl_vendorlib}/finaud
-%{perl_vendorlib}/oar_sched_fifo
-%{perl_vendorlib}/Gant.pm
-%{perl_vendorlib}/oar_sched_gant
-%{perl_vendorlib}/oar_sched_gant_besteffort_deploy_aware
-%{perl_vendorlib}/oar_meta_sched
-%{perl_vendorlib}/oar_scheduler.pm
-%attr(755,root,root) %{perl_vendorlib}/oar_sched_fifo_queue
-%attr(755,root,root) %{perl_vendorlib}/oar_sched_fifo_queue_killer
-%attr(755,root,root) %{perl_vendorlib}/oarnotify
-%attr(755,root,root) %{perl_vendorlib}/NodeChangeState
-%{perl_vendorlib}/oar-cgi.pl
-%attr(755,root,root) %{perl_vendorlib}/oarremovenode
-%attr(755,root,root) %{perl_vendorlib}/oaraccounting
+%config(noreplace) %{_initrddir}/oar-server
+%config(noreplace) %{_sysconfdir}/sysconfig/oar-server
+%config(noreplace) %{_sysconfdir}/cron.d/oar-server
+%config(noreplace) %{_sysconfdir}/%{name}/job_resource_manager.pl
+%config(noreplace) %{_sysconfdir}/%{name}/oarmonitor_sensor.pl
+%config(noreplace) %{_sysconfdir}/%{name}/server_epilogue
+%config(noreplace) %{_sysconfdir}/%{name}/server_prologue
+%config(noreplace) %{_sysconfdir}/%{name}/suspend_resume_manager.pl
+%attr(-,oar,oar) %dir %{_var}/lib/%{name}/.ssh
+%attr(-,oar,oar) %config(noreplace) %{_var}/lib/%{name}/.ssh/config
+%{_sbindir}/Almighty
+%{_sbindir}/oar-server
+%{_sbindir}/oar_mysql_db_init
+%{_sbindir}/oar_psql_db_init
+%{_sbindir}/oaraccounting
+%{_sbindir}/oarmonitor
+%{_sbindir}/oarnotify
+%{_sbindir}/oarproperty
+%{_sbindir}/oarremoveresource
+%{_mandir}/man1/Almighty.1*
+%{_mandir}/man1/oar_mysql_db_init.1*
+%{_mandir}/man1/oaraccounting.1*
+%{_mandir}/man1/oarmonitor.1*
+%{_mandir}/man1/oarnotify.1*
+%{_mandir}/man1/oarproperty.1*
+%{_mandir}/man1/oarremoveresource.1*
+%{_datadir}/%{name}/Almighty
+%{_datadir}/%{name}/Gantt_hole_storage.pm
+%{_datadir}/%{name}/Leon
+%{_datadir}/%{name}/NodeChangeState
+%{_datadir}/%{name}/bipbip
+%{_datadir}/%{name}/default_data.sql
+%{_datadir}/%{name}/finaud
+%{_datadir}/%{name}/mysql_default_admission_rules.sql
+%{_datadir}/%{name}/mysql_structure.sql
+%{_datadir}/%{name}/oar_meta_sched
+%{_datadir}/%{name}/oar_mysql_db_init
+%{_datadir}/%{name}/oar_psql_db_init
+%{_datadir}/%{name}/oar_scheduler.pm
+%{_datadir}/%{name}/oaraccounting
+%{_datadir}/%{name}/oarexec
+%{_datadir}/%{name}/oarmonitor
+%{_datadir}/%{name}/oarnotify
+%{_datadir}/%{name}/oarproperty
+%{_datadir}/%{name}/oarremoveresource
+%{_datadir}/%{name}/pg_default_admission_rules.sql
+%{_datadir}/%{name}/pg_structure.sql
+%{_datadir}/%{name}/ping_checker.pm
+%{_datadir}/%{name}/runner
+%{_datadir}/%{name}/sarko
+%{_datadir}/%{name}/schedulers/oar_sched_gantt_with_timesharing
+%{_datadir}/%{name}/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
 
 %files user
-%doc README
 %defattr(-,root,root)
-%attr(755,root,root) %{perl_vendorlib}/oarnodes
-%attr(755,root,root) %{perl_vendorlib}/oardel
-%attr(755,root,root) %{perl_vendorlib}/oarstat
-%attr(755,root,root) %{perl_vendorlib}/oarsub
-%attr(755,root,root) %{perl_vendorlib}/oarhold
-%attr(755,root,root) %{perl_vendorlib}/oarresume
-%attr(755,root,root) %{_bindir}/oardel
-%attr(755,root,root) %{_bindir}/oarhold
-%attr(755,root,root) %{_bindir}/oarnodes
-%attr(755,root,root) %{_bindir}/oarsub
-%attr(755,root,root) %{_bindir}/oarstat
-%attr(755,root,root) %{_bindir}/oarresume
-%{_mandir}/man1/oardel.*
+%{_datadir}/%{name}/oarnodes
+%{_datadir}/%{name}/oardel
+%{_datadir}/%{name}/oarstat
+%{_datadir}/%{name}/oarsub
+%{_datadir}/%{name}/oarhold
+%{_datadir}/%{name}/oarresume
+%{_bindir}/oardel
+%{_bindir}/oarhold
+%{_bindir}/oarmonitor_graph_gen
+%{_bindir}/oarnodes
+%{_bindir}/oarresume
+%{_bindir}/oarstat
+%{_bindir}/oarsub
+%{_mandir}/man1/oardel.1*
+%{_mandir}/man1/oarhold.1*
+%{_mandir}/man1/oarmonitor_graph_gen.1*
 %{_mandir}/man1/oarnodes.*
 %{_mandir}/man1/oarresume.*
 %{_mandir}/man1/oarstat.*
 %{_mandir}/man1/oarsub.*
-%{_mandir}/man1/oarhold.*
 
 %files node
-%doc README
 %defattr(-,root,root)
-%attr(755,root,root) %{_bindir}/oarexec
-%attr(755,root,root) %{_bindir}/oarkill
-%attr(755,root,root) %{perl_vendorlib}/oarexec
-%attr(755,root,root) %{perl_vendorlib}/oarkill
-%attr(755,root,root) %{perl_vendorlib}/oarexecuser.sh
-%attr(755,root,root) %{_localstatedir}/lib/oar/oar_prologue
-%attr(755,root,root) %{_localstatedir}/lib/oar/oar_epilogue
-%attr(755,root,root) %{_localstatedir}/lib/oar/oar_diffuse_script
-%attr(755,root,root) %{_localstatedir}/lib/oar/oar_epilogue_local
-%attr(755,root,root) %{_localstatedir}/lib/oar/oar_prologue_local
-%attr(755,root,root) %{_localstatedir}/lib/oar/lock_user.sh
+%config(noreplace) %{_initrddir}/oar-node
+%config(noreplace) %{_sysconfdir}/sysconfig/oar-node
+%config(noreplace) %{_sysconfdir}/cron.d/oar-node
+%config(noreplace) %{_sysconfdir}/oar/check.d
+%config(noreplace) %{_sysconfdir}/oar/epilogue
+%config(noreplace) %{_sysconfdir}/oar/prologue
+%config(noreplace) %{_sysconfdir}/oar/sshd_config
+%{_bindir}/oarnodechecklist
+%{_bindir}/oarnodecheckquery
+%{_datadir}/%{name}/detect_resources
+%{_datadir}/%{name}/oarnodecheckrun
+%dir %attr(-,oar,oar) %{_var}/lib/oar/checklogs
 
-%files draw-gantt
-%doc README
+%files web-status
 %defattr(-,root,root)
-%config(noreplace) %{_sysconfdir}/DrawGantt.conf
-%attr(755,root,root) /var/www/cgi-bin/DrawOARGantt.pl
-%attr(755,root,root) %{perl_vendorlib}/oar_sched_gant_g5k
-/var/www/cgi-bin/oar_conflib.pm
-%{wwwdir}/DrawGantt/Icons/*
-%{wwwdir}/DrawGantt/js/*
-
-%files desktop-computing-cgi
-%doc README
-%defattr(-,root,root)
-%attr(755,root,root) %{_sbindir}/oarcache
-%attr(755,root,root) %{perl_vendorlib}/oarcache
-%attr(755,root,root) %{perl_vendorlib}/oarres
-%attr(755,root,root) %{_sbindir}/oarres
-%{perl_vendorlib}/oar-cgi
-/var/www/cgi-bin/oar-cgi
-
-%files desktop-computing-agent
-%doc README
-%defattr(-,root,root)
-%attr(755,root,root) %{_bindir}/oar-agent
+%config(noreplace) %{_webappconfdir}/%{name}.conf
+%config(noreplace) %{_sysconfdir}/oar/drawgantt.conf
+%config(noreplace) %{_sysconfdir}/oar/monika.conf
+%{_var}/www/%{name}
+%attr(-,apache,apache) %{_var}/lib/%{name}/drawgantt
 
 %files doc
-%doc README
 %defattr(-,root,root)
-%doc Docs/desktop-computing.ps
-/usr/share/doc/oar-%{version}/html/*
-/usr/share/doc/oar-%{version}/Almighty.fig
-/usr/share/doc/oar-%{version}/Almighty.ps
+%{_docdir}/%{name}
 
-
+%files admin
+%defattr(-,root,root)
+%{_datadir}/%{name}/oar_modules.rb
+%{_datadir}/%{name}/oaradmin.rb
+%{_datadir}/%{name}/oaradmin_modules.rb
+%{_sbindir}/oaradmin
+%{_mandir}/man1/oaradmin.1*
