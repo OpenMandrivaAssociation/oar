@@ -142,6 +142,12 @@ perl -i -pe 's#path_cache_directory.*#path_cache_directory=/var/www/html/DrawGan
 
 mv $RPM_BUILD_ROOT/%{perl_vendorlib}/deploy_nodes.sh $RPM_BUILD_ROOT/%{_sbindir}/deploy_nodes.sh
 
+cat > README.urpmi <<EOF
+Post-installation instructions
+
+You have to create the MySQL database, using %{_sbindir}/oar_db_init.
+EOF
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -224,9 +230,6 @@ cat <<EOF > %{_localstatedir}/lib/oar/.ssh/config || true
 EOF
 chown oar.oar /var/lib/oar/.ssh -R || true
 %_post_service oar-server
-echo "- don't forget to create the OAR MySQL database"
-echo "%{_sbindir}/oar_db_init" 
-echo "- Morever you have to edit and adjust your configuration in %{_sysconfdir}/oar.conf"
 
 %preun server
 %_preun_service oar-server
@@ -267,7 +270,7 @@ rm -f %{_sysconfdir}/cron.hourly/oarcache
 %attr(755,root,root) %{_sysconfdir}/profile.d/oar.sh
 
 %files server
-%doc README
+%doc README README.urpmi
 %defattr(-,root,root)
 %attr(755,root,root) %{_sbindir}/oar-server
 %attr(755,root,root) %{_sbindir}/deploy_nodes.sh
