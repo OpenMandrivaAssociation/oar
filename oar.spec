@@ -147,9 +147,9 @@ popd
 popd
 
 perl -pi -e 's|^web_root.*|web_root: "%{_var}/www/%{name}"|' \
-    %{buildroot}%{_sysconfdir}/%{name}/monika.conf
-perl -pi -e 's|^css_path.*|css_path = /monika/monika.css|' \
     %{buildroot}%{_sysconfdir}/%{name}/drawgantt.conf
+perl -pi -e 's|^css_path.*|css_path = /monika/monika.css|' \
+    %{buildroot}%{_sysconfdir}/%{name}/monika.conf
 
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
