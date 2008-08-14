@@ -1,5 +1,5 @@
 %define version 2.3.1
-%define release %mkrel 1
+%define release %mkrel 2
 %define wwwdir /var/www/html
 	
 Name:		oar
