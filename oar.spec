@@ -26,7 +26,8 @@ This is OAR Batch Scheduler
 Summary:	OAR batch scheduler common package
 Group:		System/Servers
 BuildArch: 	noarch
-Requires:	sudo, perl-DBD-mysql, openssh-clients, openssh-server
+Requires:	openssh-clients
+Requires:	openssh-server
 
 %description common
 This package installs the server part or the OAR batch scheduler
@@ -210,7 +211,9 @@ EOF
 cat > README.urpmi <<EOF
 Post-installation instructions
 
-You have to create the MySQL database, using %{_sbindir}/oar_db_init.
+You have to create a database for the server, using either:
+- postgresql: install perl-DBD-pg, and run oar_psql_db_init
+- mysql: install perl-DBD-mysql, and run oar_mysql_db_init
 EOF
 
 %clean
