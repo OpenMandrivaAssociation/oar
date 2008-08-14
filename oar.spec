@@ -191,6 +191,7 @@ cat > %{buildroot}%{_sbindir}/oar-server <<'EOF'
 %{_sbindir}/Almighty $* &
 jobs -p  > /var/run/`basename $0`.pid
 EOF
+chmod +x %{buildroot}%{_sbindir}/oar-server
 
 install -d -m 755 %{buildroot}%{_var}/lib/oar
 install -d -m 755 %{buildroot}%{_var}/lib/oar/.ssh
