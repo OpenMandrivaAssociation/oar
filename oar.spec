@@ -74,6 +74,7 @@ Group:		System/Servers
 Requires:	oar-common = %version-%release
 Requires:	oar-user = %version-%release
 requires:   apache
+requires:   ruby-gd
 
 %description web-status
 This package installs the OAR batch scheduler Gantt reservation diagram CGI:
