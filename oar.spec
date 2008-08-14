@@ -1,5 +1,5 @@
 %define version 2.3.1
-%define release %mkrel 2
+%define release %mkrel 3
 %define wwwdir /var/www/html
 	
 Name:		oar
@@ -16,6 +16,8 @@ Source3:	oar-server.sysconfig
 Source4:	oar-node.sysconfig
 Patch1: 	oar-2.3.1-fix-install.patch
 Patch2: 	oar-2.3.1-fix-documentation-build.patch
+Patch3: 	oar-2.3.1-monika-no-private-library.patch
+Patch4: 	oar-2.3.1-monika-fhs.patch
 BuildRequires:	python-docutils
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
@@ -91,6 +93,8 @@ This package install some documentation for OAR batch scheduler
 %setup -q
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
+%patch4 -p1
 
 %build
 cd Docs/documentation
@@ -164,6 +168,10 @@ perl -pi -e 's|^web_root.*|web_root: "%{_var}/www/%{name}"|' \
     %{buildroot}%{_sysconfdir}/%{name}/drawgantt.conf
 perl -pi -e 's|^css_path.*|css_path = /monika/monika.css|' \
     %{buildroot}%{_sysconfdir}/%{name}/monika.conf
+
+chmod 640  %{buildroot}%{_sysconfdir}/%{name}/monika.conf
+chmod 640  %{buildroot}%{_sysconfdir}/%{name}/drawgantt.conf
+
 
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
@@ -393,8 +401,9 @@ fi
 %files web-status
 %defattr(-,root,root)
 %config(noreplace) %{_webappconfdir}/%{name}.conf
-%config(noreplace) %{_sysconfdir}/oar/drawgantt.conf
-%config(noreplace) %{_sysconfdir}/oar/monika.conf
+%attr(-,root,apache) %config(noreplace) %{_sysconfdir}/oar/drawgantt.conf
+%attr(-,root,apache) %config(noreplace) %{_sysconfdir}/oar/monika.conf
+%{_datadir}/%{name}/monika
 %{_var}/www/%{name}
 %attr(-,apache,apache) %{_var}/lib/%{name}/drawgantt
 
