@@ -107,6 +107,13 @@ cd Docs/documentation
     WWWDIR=%{buildroot}/var/www/%{name} \
     CGIDIR=%{buildroot}/var/www/%{name}
 
+perl -pi -e 's|%{buildroot}||g' \
+    %{buildroot}%{_sbindir}/* \
+    %{buildroot}%{_bindir}/* \
+    %{buildroot}%{_var}/www/%{name}/monika.cgi \
+    %{buildroot}%{_datadir}/%{name}/* \
+    %{buildroot}%{_datadir}/%{name}/oardodo/*
+
 perl -pi \
     -e 's|^#OAR_RUNTIME_DIRECTORY=.*|OAR_RUNTIME_DIRECTORY="/var/lib/oar"|;' \
     -e 's|^#OPENSSH_CMD=.*|OPENSSH_CMD="/usr/bin/ssh -p 6667"|;' \
