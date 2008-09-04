@@ -1,5 +1,5 @@
 %define version 2.3.1
-%define release %mkrel 3
+%define release %mkrel 4
 %define wwwdir /var/www/html
 	
 Name:		oar
@@ -48,6 +48,7 @@ This package installs the server part or the OAR batch scheduler
 Summary:	OAR batch scheduler administration tools package
 Group:		System/Servers
 Requires:	oar-common = %version-%release
+requires:   ruby-dbi
 
 %description admin
 This package installs some useful tools to help the administrator of a oar
@@ -77,6 +78,7 @@ Requires:	oar-common = %version-%release
 Requires:	oar-user = %version-%release
 requires:   apache
 requires:   ruby-gd
+requires:   ruby-dbi
 
 %description web-status
 This package installs the OAR batch scheduler Gantt reservation diagram CGI:
@@ -105,20 +107,14 @@ cd Docs/documentation
 
 %__make common configuration libs doc-install server dbinit node user draw-gantt monika www-conf tools \
     OARUSER=oar \
-    PREFIX=%{buildroot}%{_prefix} \
-    OARCONFDIR=%{buildroot}%{_sysconfdir}/%{name} \
-    OARDIR=%{buildroot}%{_datadir}/%{name} \
-    DOCDIR=%{buildroot}%{_docdir}/%{name} \
-    MANDIR=%{buildroot}%{_mandir} \
-    WWWDIR=%{buildroot}/var/www/%{name} \
-    CGIDIR=%{buildroot}/var/www/%{name}
-
-perl -pi -e 's|%{buildroot}||g' \
-    %{buildroot}%{_sbindir}/* \
-    %{buildroot}%{_bindir}/* \
-    %{buildroot}%{_var}/www/%{name}/monika.cgi \
-    %{buildroot}%{_datadir}/%{name}/* \
-    %{buildroot}%{_datadir}/%{name}/oardodo/*
+    PREFIX=%{_prefix} \
+    OARCONFDIR=%{_sysconfdir}/%{name} \
+    OARDIR=%{_datadir}/%{name} \
+    DOCDIR=%{_docdir}/%{name} \
+    MANDIR=%{_mandir} \
+    WWWDIR=/var/www/%{name} \
+    CGIDIR=/var/www/%{name} \
+    DESTDIR=%{buildroot}
 
 perl -pi -e 's|/usr/lib/oar|%{_datadir}/%{name}|'  \
     %{buildroot}%{_docdir}/%{name}/html/OAR-DOCUMENTATION-ADMIN.html \
