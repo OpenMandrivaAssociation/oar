@@ -1,5 +1,5 @@
 %define version 2.3.1
-%define release %mkrel 4
+%define release %mkrel 5
 %define wwwdir /var/www/html
 	
 Name:		oar
@@ -18,6 +18,8 @@ Patch1: 	oar-2.3.1-fix-install.patch
 Patch2: 	oar-2.3.1-fix-documentation-build.patch
 Patch3: 	oar-2.3.1-monika-no-private-library.patch
 Patch4: 	oar-2.3.1-monika-fhs.patch
+Patch5: 	oar-2.3.1-fix-pod.patch
+Patch6: 	oar-2.3.1-fix-database-creation.patch
 BuildRequires:	python-docutils
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
@@ -58,6 +60,7 @@ server (resources manipulation, admission rules edition, ...)
 Summary:	OAR batch scheduler node package
 Group:		System/Servers
 Requires:	oar-common = %version-%release
+Requires:	perl(YAML)
 BuildArch: 	noarch
 
 %description user
@@ -97,6 +100,8 @@ This package install some documentation for OAR batch scheduler
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
+%patch6 -p1
 
 %build
 cd Docs/documentation
@@ -139,7 +144,7 @@ Alias /drawgantt %{_var}/www/%{name}/drawgantt
 </Directory>
 
 <Directory %{_var}/www/%{name}/drawgantt>
-    Options ExecCGI
+    Options ExecCGI FollowSymlinks
     DirectoryIndex drawgantt.cgi
     Allow from all
 </Directory>
