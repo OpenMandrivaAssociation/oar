@@ -1,5 +1,5 @@
 %define version 2.3.1
-%define release %mkrel 5
+%define release %mkrel 6
 %define wwwdir /var/www/html
 	
 Name:		oar
@@ -173,8 +173,6 @@ perl -pi -e 's|^css_path.*|css_path = /monika/monika.css|' \
 chmod 640  %{buildroot}%{_sysconfdir}/%{name}/monika.conf
 chmod 640  %{buildroot}%{_sysconfdir}/%{name}/drawgantt.conf
 
-
-
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
 cat > %{buildroot}%{_sysconfdir}/logrotate.d/%{name}.conf <<EOF
 /var/log/oar.log {
@@ -284,19 +282,21 @@ fi
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/%{name}/oar.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}.conf
-%{_sbindir}/oarnodesetting
+%attr(6750,oar,oar) %{_sbindir}/oarnodesetting
 %{_bindir}/oarcp
 %{_bindir}/oarsh
+%dir %{_datadir}/%{name}
+%dir %{_datadir}/%{name}/oardodo
 %{_datadir}/%{name}/oar_Judas.pm
 %{_datadir}/%{name}/oar_Tools.pm
 %{_datadir}/%{name}/oar_conflib.pm
 %{_datadir}/%{name}/oar_iolib.pm
 %{_datadir}/%{name}/oar_resource_tree.pm
-%{_datadir}/%{name}/oardodo/oardodo
+%attr(6750,root,oar) %{_datadir}/%{name}/oardodo/oardodo
 %{_datadir}/%{name}/oarnodesetting
 %{_datadir}/%{name}/oarnodesetting_ssh
 %{_datadir}/%{name}/oarsh
-%{_datadir}/%{name}/oarsh_oardo
+%attr(6755,oar,oar) %{_datadir}/%{name}/oarsh_oardo
 %{_datadir}/%{name}/oarversion.pm
 %{_datadir}/%{name}/sentinelle.pl
 %{_datadir}/%{name}/oarsh_shell
@@ -318,15 +318,15 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/suspend_resume_manager.pl
 %attr(-,oar,oar) %dir %{_var}/lib/%{name}/.ssh
 %attr(-,oar,oar) %config(noreplace) %{_var}/lib/%{name}/.ssh/config
-%{_sbindir}/Almighty
+%attr(6750,oar,oar) %{_sbindir}/Almighty
 %{_sbindir}/oar-server
-%{_sbindir}/oar_mysql_db_init
+%attr(6750,oar,oar) %{_sbindir}/oar_mysql_db_init
 %{_sbindir}/oar_psql_db_init
-%{_sbindir}/oaraccounting
-%{_sbindir}/oarmonitor
-%{_sbindir}/oarnotify
-%{_sbindir}/oarproperty
-%{_sbindir}/oarremoveresource
+%attr(6750,oar,oar) %{_sbindir}/oaraccounting
+%attr(6750,oar,oar) %{_sbindir}/oarmonitor
+%attr(6750,oar,oar) %{_sbindir}/oarnotify
+%attr(6750,oar,oar) %{_sbindir}/oarproperty
+%attr(6750,oar,oar) %{_sbindir}/oarremoveresource
 %{_mandir}/man1/Almighty.1*
 %{_mandir}/man1/oar_mysql_db_init.1*
 %{_mandir}/man1/oaraccounting.1*
@@ -369,13 +369,13 @@ fi
 %{_datadir}/%{name}/oarsub
 %{_datadir}/%{name}/oarhold
 %{_datadir}/%{name}/oarresume
-%{_bindir}/oardel
-%{_bindir}/oarhold
+%attr(6755,oar,oar) %{_bindir}/oardel
+%attr(6755,oar,oar) %{_bindir}/oarhold
+%attr(6755,oar,oar) %{_bindir}/oarnodes
+%attr(6755,oar,oar) %{_bindir}/oarresume
+%attr(6755,oar,oar) %{_bindir}/oarstat
+%attr(6755,oar,oar) %{_bindir}/oarsub
 %{_bindir}/oarmonitor_graph_gen
-%{_bindir}/oarnodes
-%{_bindir}/oarresume
-%{_bindir}/oarstat
-%{_bindir}/oarsub
 %{_mandir}/man1/oardel.1*
 %{_mandir}/man1/oarhold.1*
 %{_mandir}/man1/oarmonitor_graph_gen.1*
@@ -417,5 +417,5 @@ fi
 %{_datadir}/%{name}/oar_modules.rb
 %{_datadir}/%{name}/oaradmin.rb
 %{_datadir}/%{name}/oaradmin_modules.rb
-%{_sbindir}/oaradmin
+%attr(6750,oar,oar) %{_sbindir}/oaradmin
 %{_mandir}/man1/oaradmin.1*
