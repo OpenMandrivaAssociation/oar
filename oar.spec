@@ -1,5 +1,5 @@
-%define version 2.3.1
-%define release %mkrel 6
+%define version 2.3.3
+%define release %mkrel 1
 %define wwwdir /var/www/html
 	
 Name:		oar
@@ -14,12 +14,8 @@ Source1:	oar-server.init
 Source2:	oar-node.init
 Source3:	oar-server.sysconfig
 Source4:	oar-node.sysconfig
-Patch1: 	oar-2.3.1-fix-install.patch
-Patch2: 	oar-2.3.1-fix-documentation-build.patch
-Patch3: 	oar-2.3.1-monika-no-private-library.patch
+Patch1: 	oar-2.3.3-fix-installation.patch
 Patch4: 	oar-2.3.1-monika-fhs.patch
-Patch5: 	oar-2.3.1-fix-pod.patch
-Patch6: 	oar-2.3.1-fix-database-creation.patch
 BuildRequires:	python-docutils
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
@@ -97,11 +93,7 @@ This package install some documentation for OAR batch scheduler
 %prep
 %setup -q
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
 
 %build
 cd Docs/documentation
@@ -285,6 +277,7 @@ fi
 %attr(6750,oar,oar) %{_sbindir}/oarnodesetting
 %{_bindir}/oarcp
 %{_bindir}/oarsh
+%{_bindir}/oarprint
 %dir %{_datadir}/%{name}
 %dir %{_datadir}/%{name}/oardodo
 %{_datadir}/%{name}/oar_Judas.pm
@@ -302,6 +295,7 @@ fi
 %{_datadir}/%{name}/oarsh_shell
 %{_mandir}/man1/oarcp.1*
 %{_mandir}/man1/oarsh.1*
+%{_mandir}/man1/oarprint.1*
 %{_mandir}/man1/oarnodesetting.1*
 %dir %attr(-,oar,oar) %{_var}/lib/oar
 
