@@ -1,6 +1,5 @@
 %define version 2.3.3
-%define release %mkrel 1
-%define wwwdir /var/www/html
+%define release %mkrel 2
 	
 Name:		oar
 Version:	%{version}
@@ -17,6 +16,7 @@ Source4:	oar-node.sysconfig
 Patch1: 	oar-2.3.3-fix-installation.patch
 Patch4: 	oar-2.3.1-monika-fhs.patch
 BuildRequires:	python-docutils
+BuildArch: 	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description 
@@ -25,7 +25,6 @@ This is OAR Batch Scheduler
 %package common
 Summary:	OAR batch scheduler common package
 Group:		System/Servers
-BuildArch: 	noarch
 Requires:	openssh-clients
 Requires:	openssh-server
 
@@ -57,7 +56,6 @@ Summary:	OAR batch scheduler node package
 Group:		System/Servers
 Requires:	oar-common = %version-%release
 Requires:	perl(YAML)
-BuildArch: 	noarch
 
 %description user
 This package install the submition and query part or the OAR batch scheduler
