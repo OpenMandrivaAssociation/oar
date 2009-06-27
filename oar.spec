@@ -1,5 +1,5 @@
-%define version 2.3.3
-%define release %mkrel 2
+%define version 2.3.4
+%define release %mkrel 1
 	
 Name:		oar
 Version:	%{version}
@@ -13,7 +13,7 @@ Source1:	oar-server.init
 Source2:	oar-node.init
 Source3:	oar-server.sysconfig
 Source4:	oar-node.sysconfig
-Patch1: 	oar-2.3.3-fix-installation.patch
+Patch1: 	oar-2.3.4-fix-installation.patch
 Patch4: 	oar-2.3.1-monika-fhs.patch
 BuildRequires:	python-docutils
 BuildArch: 	noarch
@@ -313,6 +313,7 @@ fi
 %attr(6750,oar,oar) %{_sbindir}/Almighty
 %{_sbindir}/oar-server
 %attr(6750,oar,oar) %{_sbindir}/oar_mysql_db_init
+%attr(6750,oar,oar) %{_sbindir}/oar_resources_init
 %{_sbindir}/oar_psql_db_init
 %attr(6750,oar,oar) %{_sbindir}/oaraccounting
 %attr(6750,oar,oar) %{_sbindir}/oarmonitor
