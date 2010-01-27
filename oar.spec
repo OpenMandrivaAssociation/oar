@@ -1,4 +1,4 @@
-%define version 2.3.4
+%define version 2.3.5
 %define release %mkrel 1
 	
 Name:		oar
@@ -8,7 +8,7 @@ Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
 Url:		http://oar.imag.fr
-Source0:	https://gforge.inria.fr/frs/download.php/5170/%{name}-%{version}.tar.gz
+Source0:	https://gforge.inria.fr/frs/download.php/24906/%{name}_%version.orig.tar.gz
 Source1:	oar-server.init
 Source2:	oar-node.init
 Source3:	oar-server.sysconfig
