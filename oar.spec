@@ -1,5 +1,5 @@
 %define version 2.3.5
-%define release %mkrel 1
+%define release %mkrel 2
 	
 Name:		oar
 Version:	%{version}
