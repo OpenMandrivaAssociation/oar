@@ -1,5 +1,5 @@
 %define version 2.3.5
-%define release %mkrel 2
+%define release %mkrel 3
 	
 Name:		oar
 Version:	%{version}
@@ -76,6 +76,10 @@ Requires:	oar-user = %version-%release
 requires:   apache
 requires:   ruby-gd
 requires:   ruby-dbi
+%if %mdkversion < 201010
+Requires(post):   rpm-helper
+Requires(postun):   rpm-helper
+%endif
 
 %description web-status
 This package installs the OAR batch scheduler Gantt reservation diagram CGI:
@@ -122,20 +126,22 @@ perl -pi \
      %{buildroot}%{_sysconfdir}/%{name}/oar.conf
 
 # apache configuration
-install -d -m 755 %{buildroot}%{_webappconfdir}
-cat > %{buildroot}%{_webappconfdir}/%{name}.conf <<EOF
+install -d -m 755 %{buildroot}%{webappconfdir}
+cat > %{buildroot}%{webappconfdir}/%{name}.conf <<EOF
 Alias /monika %{_var}/www/%{name}/monika
 Alias /drawgantt %{_var}/www/%{name}/drawgantt
 
 <Directory %{_var}/www/%{name}/monika>
     Options ExecCGI
     DirectoryIndex monika.cgi
+    Order allow,deny
     Allow from all
 </Directory>
 
 <Directory %{_var}/www/%{name}/drawgantt>
     Options ExecCGI FollowSymlinks
     DirectoryIndex drawgantt.cgi
+    Order allow,deny
     Allow from all
 </Directory>
 EOF
@@ -263,10 +269,14 @@ fi
 %_preun_service oar-node
 
 %post web-status
+%if %mdkversion < 201010
 %_post_webapp
+%endif
 
 %preun web-status
+%if %mdkversion < 201010
 %_postun_webapp
+%endif
 
 %files common
 %defattr(-,root,root)
