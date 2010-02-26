@@ -1,5 +1,5 @@
-%define version 2.3.5
-%define release %mkrel 3
+%define version 2.4.1
+%define release %mkrel 1
 	
 Name:		oar
 Version:	%{version}
@@ -8,13 +8,12 @@ Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
 Url:		http://oar.imag.fr
-Source0:	https://gforge.inria.fr/frs/download.php/24906/%{name}_%version.orig.tar.gz
+Source0:	https://gforge.inria.fr/frs/download.php/24906/%{name}-%version.tar.bz2
 Source1:	oar-server.init
 Source2:	oar-node.init
 Source3:	oar-server.sysconfig
 Source4:	oar-node.sysconfig
-Patch1: 	oar-2.3.4-fix-installation.patch
-Patch4: 	oar-2.3.1-monika-fhs.patch
+Patch4: 	oar-2.4.1-monika-fhs.patch
 BuildRequires:	python-docutils
 BuildArch: 	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}
@@ -94,7 +93,6 @@ This package install some documentation for OAR batch scheduler
 
 %prep
 %setup -q
-%patch1 -p1
 %patch4 -p1
 
 %build
@@ -156,7 +154,7 @@ mv monika.cgi monika
 mv userInfos.cgi monika
 mv monika.css monika
 pushd drawgantt
-rmdir cache
+#rmdir cache
 ln -sf ../../../lib/%{name}/drawgantt cache
 popd
 popd
@@ -281,6 +279,9 @@ fi
 %files common
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/%{name}/oar.conf
+%config(noreplace) %{_sysconfdir}/%{name}/oarnodesetting_ssh
+%config(noreplace) %{_sysconfdir}/%{name}/update_cpuset_id.sh
+
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}.conf
 %attr(6750,oar,oar) %{_sbindir}/oarnodesetting
 %{_bindir}/oarcp
@@ -295,7 +296,6 @@ fi
 %{_datadir}/%{name}/oar_resource_tree.pm
 %attr(6750,root,oar) %{_datadir}/%{name}/oardodo/oardodo
 %{_datadir}/%{name}/oarnodesetting
-%{_datadir}/%{name}/oarnodesetting_ssh
 %{_datadir}/%{name}/oarsh
 %attr(6755,oar,oar) %{_datadir}/%{name}/oarsh_oardo
 %{_datadir}/%{name}/oarversion.pm
@@ -325,6 +325,7 @@ fi
 %attr(6750,oar,oar) %{_sbindir}/oar_mysql_db_init
 %attr(6750,oar,oar) %{_sbindir}/oar_resources_init
 %{_sbindir}/oar_psql_db_init
+%attr(6750,oar,oar) %{_sbindir}/oar_checkdb
 %attr(6750,oar,oar) %{_sbindir}/oaraccounting
 %attr(6750,oar,oar) %{_sbindir}/oarmonitor
 %attr(6750,oar,oar) %{_sbindir}/oarnotify
@@ -363,6 +364,13 @@ fi
 %{_datadir}/%{name}/sarko
 %{_datadir}/%{name}/schedulers/oar_sched_gantt_with_timesharing
 %{_datadir}/%{name}/schedulers/oar_sched_gantt_with_timesharing_and_fairsharing
+%{_datadir}/%{name}/db_upgrade
+%{_datadir}/%{name}/oar_checkdb.pl
+%{_datadir}/%{name}/oarnodes.v2_3
+%{_datadir}/%{name}/oarnodes_lib.pm
+%{_datadir}/%{name}/oarstat.v2_3
+%{_datadir}/%{name}/oarstat_lib.pm
+%{_datadir}/%{name}/oarsub_lib.pm
 
 %files user
 %defattr(-,root,root)
@@ -375,8 +383,10 @@ fi
 %attr(6755,oar,oar) %{_bindir}/oardel
 %attr(6755,oar,oar) %{_bindir}/oarhold
 %attr(6755,oar,oar) %{_bindir}/oarnodes
+%attr(6755,oar,oar) %{_bindir}/oarnodes.old
 %attr(6755,oar,oar) %{_bindir}/oarresume
 %attr(6755,oar,oar) %{_bindir}/oarstat
+%attr(6755,oar,oar) %{_bindir}/oarstat.old
 %attr(6755,oar,oar) %{_bindir}/oarsub
 %{_bindir}/oarmonitor_graph_gen
 %{_mandir}/man1/oardel.1*
@@ -410,6 +420,7 @@ fi
 %{_datadir}/%{name}/monika
 %{_var}/www/%{name}
 %attr(-,apache,apache) %{_var}/lib/%{name}/drawgantt
+%attr(-,apache,apache) %{_var}/lib/drawgantt-files
 
 %files doc
 %defattr(-,root,root)
