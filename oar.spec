@@ -1,4 +1,4 @@
-%define version 2.4.1
+%define version 2.4.3
 %define release %mkrel 1
 	
 Name:		oar
@@ -13,7 +13,8 @@ Source1:	oar-server.init
 Source2:	oar-node.init
 Source3:	oar-server.sysconfig
 Source4:	oar-node.sysconfig
-Patch4: 	oar-2.4.1-monika-fhs.patch
+Patch0:		oar-2.4.4-drawgantt.php.patch
+#Patch4: 	oar-2.4.1-monika-fhs.patch
 BuildRequires:	python-docutils
 BuildArch: 	noarch
 BuildRoot:	%{_tmppath}/%{name}-%{version}
@@ -26,6 +27,9 @@ Summary:	OAR batch scheduler common package
 Group:		System/Servers
 Requires:	openssh-clients
 Requires:	openssh-server
+Requires:	perl-Sys-Hostname-Long perl-Time-HiRes perl-IPC-SysV perl-Getopt-Long
+Requires:	perl-IO-Socket-INET6 perl-Time-Local perl-Data-Dumper perl-Storable
+Requires:	perl-File-Temp
 
 %description common
 This package installs the server part or the OAR batch scheduler
@@ -84,6 +88,19 @@ Requires(postun):   rpm-helper
 This package installs the OAR batch scheduler Gantt reservation diagram CGI:
 DrawGantt and the instant cluster state visualization CGI: Monika
 
+%package api
+Summary:	OAR batch scheduler API
+Group:		System/Servers
+requires:	oar-user
+
+%description api
+You may test the API with a simple wget:
+wget -O - http://localhost:/oarapi/resources.html
+It should give you the list of resources in the yaml format
+but enclosed in an html page. To test if the authentication works,
+you need to post a new job. See the example.txt file that gives you
+example queries with a ruby rest client.
+
 %package doc
 Summary:	OAR batch scheduler documentation package
 Group:		Books/Computer books
@@ -93,16 +110,22 @@ This package install some documentation for OAR batch scheduler
 
 %prep
 %setup -q
-%patch4 -p1
+%patch0 -p0
 
 %build
+# Modify Makefile for chown commands to be non-fatal as the permissions
+# are set by the packaging
+perl -i -pe "s/chown/-chown/" Makefile
+perl -i -pe "s/-o root//" Makefile
+perl -i -pe "s/-g root//" Makefile
+
 cd Docs/documentation
 %make
 
 %install
 %__rm -rf %{buildroot}
 
-%__make common configuration libs doc-install server dbinit node user draw-gantt monika www-conf tools \
+%__make common configuration libs doc-install server dbinit node user draw-gantt monika www-conf tools api \
     OARUSER=oar \
     PREFIX=%{_prefix} \
     OARCONFDIR=%{_sysconfdir}/%{name} \
@@ -111,6 +134,7 @@ cd Docs/documentation
     MANDIR=%{_mandir} \
     WWWDIR=/var/www/%{name} \
     CGIDIR=/var/www/%{name} \
+    PERLLIBDIR=%perl_sitelib \
     DESTDIR=%{buildroot}
 
 perl -pi -e 's|/usr/lib/oar|%{_datadir}/%{name}|'  \
@@ -128,6 +152,7 @@ install -d -m 755 %{buildroot}%{webappconfdir}
 cat > %{buildroot}%{webappconfdir}/%{name}.conf <<EOF
 Alias /monika %{_var}/www/%{name}/monika
 Alias /drawgantt %{_var}/www/%{name}/drawgantt
+Alias /oarapi %{_var}/www/%{name}/oarapi
 
 <Directory %{_var}/www/%{name}/monika>
     Options ExecCGI
@@ -142,21 +167,47 @@ Alias /drawgantt %{_var}/www/%{name}/drawgantt
     Order allow,deny
     Allow from all
 </Directory>
+
+<Directory %{_var}/www/%{name}/oarapi>
+    Options ExecCGI FollowSymlinks
+    DirectoryIndex oarapi.cgi
+    Order allow,deny
+    Allow from all
+</Directory>
+EOF
+
+install -d -m 755 %{buildroot}%{_var}/www/%{name}/drawgantt
+cat > %{buildroot}%{_var}/www/%{name}/drawgantt/.htaccess<<EOF
+<Files "config.php">
+Order Allow,Deny
+Deny from All
+</Files>
+EOF
+
+cat > %{buildroot}%{_var}/www/%{name}/drawgantt/config.php<<EOF
+<?php
+$dbhost   = '127.0.0.1' ;
+$dbname   = 'oar'   ;
+$dbuser   = 'oar' ;
+$dbpass = 'oar' ;
+?>
 EOF
 
 rm -f %{buildroot}%{_sysconfdir}/%{name}/apache.conf
-install -d -m 755 %{buildroot}%{_var}/www/%{name}/drawgantt
 install -d -m 755 %{buildroot}%{_var}/lib/%{name}/drawgantt
 install -d -m 755 %{buildroot}%{_var}/www/%{name}/monika
-pushd %{buildroot}%{_var}/www/%{name}
-mv drawgantt.cgi drawgantt
-mv monika.cgi monika
-mv userInfos.cgi monika
-mv monika.css monika
-pushd drawgantt
+install -m 755 VisualizationInterfaces/DrawGantt/drawgantt.cgi %{buildroot}%{_var}/www/%{name}/drawgantt
+cp -av VisualizationInterfaces/DrawGantt/drawgantt.php %{buildroot}%{_var}/www/%{name}/drawgantt
+cp -av VisualizationInterfaces/DrawGantt/Icons %{buildroot}%{_var}/www/%{name}/drawgantt
+cp -av VisualizationInterfaces/DrawGantt/js %{buildroot}%{_var}/www/%{name}/drawgantt
+cp -av VisualizationInterfaces/Monika/*.cgi %{buildroot}%{_var}/www/%{name}/monika
+cp -av VisualizationInterfaces/Monika/monika.css %{buildroot}%{_var}/www/%{name}/monika
+# remove unwated files
+rm -vf %{buildroot}%{_var}/www/%{name}/monika.*
+rm -vf %{buildroot}%{_var}/www/%{name}/drawgantt.*
+pushd %{buildroot}%{_var}/lib/%{name}/drawgantt
 #rmdir cache
 ln -sf ../../../lib/%{name}/drawgantt cache
-popd
 popd
 
 perl -pi -e 's|^web_root.*|web_root: "%{_var}/www/%{name}"|' \
@@ -168,23 +219,11 @@ chmod 640  %{buildroot}%{_sysconfdir}/%{name}/monika.conf
 chmod 640  %{buildroot}%{_sysconfdir}/%{name}/drawgantt.conf
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
-cat > %{buildroot}%{_sysconfdir}/logrotate.d/%{name}.conf <<EOF
-/var/log/oar.log {
-    daily
-    missingok
-    notifempty
-}
-EOF
+cp -av rpm/SOURCES/oar-common.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}.conf
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/cron.d
-cat > %{buildroot}%{_sysconfdir}/cron.d/%{name}-server <<EOF
-0 * * * * root /usr/share/oar/oaraccounting
-}
-EOF
-cat > %{buildroot}%{_sysconfdir}/cron.d/%{name}-node <<EOF
-0 * * * * root /usr/share/oar/oarnodecheckrun
-}
-EOF
+cp -av rpm/SOURCES/oar-server.cron.d %{buildroot}%{_sysconfdir}/cron.d/%{name}-server
+cp -av rpm/SOURCES/oar-node.cron.d %{buildroot}%{_sysconfdir}/cron.d/%{name}-node
 
 install -d -m 755 %{buildroot}%{_initrddir}
 install -m 755 %{SOURCE1} %{buildroot}%{_initrddir}/oar-server
@@ -205,9 +244,11 @@ install -d -m 755 %{buildroot}%{_var}/lib/oar
 install -d -m 755 %{buildroot}%{_var}/lib/oar/.ssh
 install -d -m 755 %{buildroot}%{_var}/lib/oar/checklogs
 cat > %{buildroot}%{_var}/lib/oar/.ssh/config <<EOF
-	Host *
-	ForwardX11 no
-	StrictHostKeyChecking no
+Host *
+    ForwardX11 no
+    StrictHostKeyChecking no
+    PasswordAuthentication no
+    AddressFamily inet
 EOF
 
 cat > README.urpmi <<EOF
@@ -277,8 +318,9 @@ fi
 %endif
 
 %files common
+%doc COPYING CHANGELOG AUTHORS TODO README
 %defattr(-,root,root)
-%config(noreplace) %{_sysconfdir}/%{name}/oar.conf
+%config(noreplace) %attr(640,oar,root) %{_sysconfdir}/%{name}/oar.conf
 %config(noreplace) %{_sysconfdir}/%{name}/oarnodesetting_ssh
 %config(noreplace) %{_sysconfdir}/%{name}/update_cpuset_id.sh
 
@@ -288,7 +330,7 @@ fi
 %{_bindir}/oarsh
 %{_bindir}/oarprint
 %dir %{_datadir}/%{name}
-%dir %{_datadir}/%{name}/oardodo
+%dir %attr(755,root,oar) %{_datadir}/%{name}/oardodo
 %{_datadir}/%{name}/oar_Judas.pm
 %{_datadir}/%{name}/oar_Tools.pm
 %{_datadir}/%{name}/oar_conflib.pm
@@ -317,6 +359,8 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/oarmonitor_sensor.pl
 %config(noreplace) %{_sysconfdir}/%{name}/server_epilogue
 %config(noreplace) %{_sysconfdir}/%{name}/server_prologue
+%{_sysconfdir}/%{name}/shut_down_nodes.sh
+%{_sysconfdir}/%{name}/wake_up_nodes.sh
 %config(noreplace) %{_sysconfdir}/%{name}/suspend_resume_manager.pl
 %attr(-,oar,oar) %dir %{_var}/lib/%{name}/.ssh
 %attr(-,oar,oar) %config(noreplace) %{_var}/lib/%{name}/.ssh/config
@@ -371,6 +415,8 @@ fi
 %{_datadir}/%{name}/oarstat.v2_3
 %{_datadir}/%{name}/oarstat_lib.pm
 %{_datadir}/%{name}/oarsub_lib.pm
+%{_datadir}/%{name}/oar_Hulot.pm
+%{_datadir}/%{name}/window_forker.pm
 
 %files user
 %defattr(-,root,root)
@@ -417,12 +463,22 @@ fi
 %config(noreplace) %{_webappconfdir}/%{name}.conf
 %attr(-,root,apache) %config(noreplace) %{_sysconfdir}/oar/drawgantt.conf
 %attr(-,root,apache) %config(noreplace) %{_sysconfdir}/oar/monika.conf
-%{_datadir}/%{name}/monika
+#%{_datadir}/%{name}/monika
+%{perl_sitelib}/monika
 %{_var}/www/%{name}
 %attr(-,apache,apache) %{_var}/lib/%{name}/drawgantt
 %attr(-,apache,apache) %{_var}/lib/drawgantt-files
 
+%files api
+%doc API/INSTALL API/oarapi_example*
+%{_sysconfdir}/%{name}/apache-api.conf
+%{_sysconfdir}/%{name}/api_html_header.pl
+%{_sysconfdir}/%{name}/api_html_postform.pl
+%{_datadir}/%{name}/oar_apilib.pm
+%{_datadir}/%{name}/oarapi.pl
+
 %files doc
+%doc FAQ-ADMIN FAQ-USER GUIDELINES QUICK* CPUSET
 %defattr(-,root,root)
 %{_docdir}/%{name}
 
@@ -433,3 +489,7 @@ fi
 %{_datadir}/%{name}/oaradmin_modules.rb
 %attr(6750,oar,oar) %{_sbindir}/oaradmin
 %{_mandir}/man1/oaradmin.1*
+
+
+%changelog
+
