@@ -1,0 +1,109 @@
+--- VisualizationInterfaces/DrawGantt/drawgantt.php	2010-06-23 08:31:51.000000000 +0000
++++ VisualizationInterfaces/DrawGantt/drawgantt.php.patched	2010-12-03 09:06:29.090911904 +0000
+@@ -5,11 +5,11 @@
+ ////////////////////////////////////////////////////////////////////////////////
+ // Parameters
+ ////////////////////////////////////////////////////////////////////////////////
+-$site = array_key_exists('site',$_GET)?$_GET['site']:"grenoble";
++$site = array_key_exists('site',$_GET)?$_GET['site']:"Mandriva Cluster";
+ $gantt_start_date = array_key_exists('start',$_GET)?$_GET['start']:0;
+ $gantt_stop_date = array_key_exists('stop',$_GET)?$_GET['stop']:0;
+-$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):86400;
+-$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):86400;
++$gantt_relative_start_date = (array_key_exists('relative_start',$_GET) or ($_GET['relative_start'] > 0))?($_GET['relative_start']):9400;
++$gantt_relative_stop_date = (array_key_exists('relative_stop',$_GET) or ($_GET['relative_stop'] > 0))?($_GET['relative_stop']):16400;
+ $resource_filter = $_GET['filter'];
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -19,17 +19,18 @@
+ $CONF=array();
+ $CONF['hierarchy_resource_width'] = 10;
+ $CONF['scale'] = 10;
+-$CONF['time_ruler_scale'] = 5;
+-$CONF['gantt_top'] = 30;
++$CONF['time_ruler_scale'] = 10;
++$CONF['gantt_top'] = 190;
+ $CONF['bottom_margin'] = 45;
+ $CONF['right_margin'] = 10;
+ $CONF['label_right_align'] = 105;
+ $CONF['hierarchy_left_align'] = 110;
+ $CONF['gantt_left_align'] = 160;
+ $CONF['gantt_width'] = 1000;
+-$CONF['gantt_min_job_width_for_label'] = 50;
+-$CONF['resource_hierarchy'] = array('cluster','host','cpu','core');
+-$CONF['resource_properties'] = array('ib10g', 'core', 'deploy', 'cpuset', 'besteffort', 'ip', 'ib10gmodel', 'disktype', 'nodemodel', 'memnode', 'memcore', 'ethnb', 'cluster', 'cpuarch', 'myri2gmodel', 'cpu', 'cpucore', 'myri10g', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'myri10gmodel', 'cputype', 'switch', 'cpufreq', 'type', 'myri2g');
++$CONF['gantt_min_job_width_for_label'] = 150;
++$CONF['resource_hierarchy'] = array('resource_id', 'network_address');
++#$CONF['resource_properties'] = array('core', 'deploy', 'cpuset', 'besteffort', 'ip', 'ib10gmodel', 'disktype', 'nodemodel', 'memnode', 'memcore', 'ethnb', 'cluster', 'cpuarch', 'myri2gmodel', 'cpu', 'cpucore', 'myri10g', 'memcpu', 'network_address', 'virtual', 'host', 'rconsole', 'myri10gmodel', 'cputype', 'switch', 'cpufreq', 'type', 'myri2g');
++$CONF['resource_properties'] = array('deploy', 'cpuset', 'besteffort', 'network_address', 'resource_id');
+ $CONF['resource_labels'] = array('host','cpuset');
+ $CONF['state_colors'] = array('Absent' => 'url(#absentPattern)', 'Suspected' => 'url(#suspectedPattern)', 'Dead' => 'url(#deadPattern)');
+ $CONF['job_colors'] = array('besteffort' => 'url(#besteffortPattern)', 'deploy' => 'url(#deployPattern)', 'container' => 'url(#containerPattern)', 'timesharing=.*' => 'url(#timesharingPattern)');
+@@ -91,10 +92,11 @@
+ 
+ // Storage class for jobs
+ class Job {
+-	public $job_id,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
++	public $job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time,$resource_ids,$network_addresses,$types;
+ 	protected $color;
+-	function __construct($job_id,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
++	function __construct($job_id,$job_name,$job_type,$state,$job_user,$command,$queue_name,$moldable_walltime,$properties,$launching_directory,$submission_time,$start_time,$stop_time) {
+ 		$this->job_id = $job_id;
++		$this->job_name = $job_name;
+ 		$this->job_type = $job_type;
+ 		$this->state = $state;
+ 		$this->job_user = $job_user;
+@@ -142,6 +144,7 @@
+ 	}
+ 	function svg_text() {
+ 		$output = "Jobid: {$this->job_id}";
++		$output .= "|JobName: {$this->job_name}";
+ 		$output .= "|User: {$this->job_user}";
+ 		$output .= "|Kind: {$this->job_type}";
+ 		$output .= "|Queue: {$this->queue_name}";
+@@ -306,9 +309,9 @@
+ ///////////////////////////////////////////////////////////////////////////////
+ 
+ // Connecting, selecting database
+-$link = mysql_connect("mysql.$site.grid5000.fr", 'oarreader', 'read')
++$link = mysql_connect("127.0.0.1", 'oar', 'oar')
+     or die('Could not connect: ' . mysql_error());
+-mysql_select_db('oar2') or die('Could not select database');
++mysql_select_db('oar') or die('Could not select database');
+ 
+ // Retrieve the "now" date
+ $query = 'SELECT UNIX_TIMESTAMP()';
+@@ -381,6 +384,7 @@
+ $query = <<<EOT
+ SELECT 
+ 	jobs.job_id,
++	jobs.job_name,
+ 	jobs.job_type,
+ 	jobs.state,
+ 	jobs.job_user,
+@@ -416,7 +420,7 @@
+ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
+ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+ 	if (! array_key_exists($line['job_id'], $jobs)) {
+-		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
++		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+ 	}
+ 	if (array_key_exists($line['resource_id'], $resource_ids)) {
+ 		$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
+@@ -433,6 +437,7 @@
+ $query = <<<EOT
+ SELECT 
+ 	jobs.job_id,
++	jobs.job_name,
+ 	jobs.job_type,
+ 	jobs.state,
+ 	jobs.job_user,
+@@ -464,7 +469,7 @@
+ $result = mysql_query($query) or die('Query failed: ' . mysql_error());
+ while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
+ 	if (! array_key_exists($line['job_id'], $jobs)) {
+-		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
++		$jobs[$line['job_id']] = new Job($line['job_id'], $line['job_name'], $line['job_type'], $line['state'], $line['job_user'], $line['command'], $line['queue_name'], $line['moldable_walltime'], $line['properties'], $line['launching_directory'], $line['submission_time'], $line['start_time'], $line['stop_time']);
+ 	}
+ 	if (array_key_exists($line['resource_id'], $resource_ids)) {
+ 		$jobs[$line['job_id']]->add_resource_id($resource_ids[$line['resource_id']]);
