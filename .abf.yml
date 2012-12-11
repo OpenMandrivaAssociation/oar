@@ -1,6 +1,2 @@
 sources:
-  "oar-2.4.3.tar.bz2:"	f8a6ac221c2b6725579e55d46ed37dcb48751825
-  "oar-node.init:"	9e0fc5772911489818105507a1100f018c1dbed2
-  "oar-node.sysconfig:"	9d6669038f13a3c3a6dfc578088c6829e148a936
-  "oar-server.init:"	0647c5f21c3b9f53c73b5c0c3f7ac1ce01a88c29
-  "oar-server.sysconfig:"	e39b2e0b3f562e04688ee6845b14d3a0443ce805
+  "oar-2.4.3.tar.bz2": f8a6ac221c2b6725579e55d46ed37dcb48751825

@@ -491,5 +491,161 @@ fi
 %{_mandir}/man1/oaradmin.1*
 
 
+
+
 %changelog
+* Fri Dec 03 2010 Antoine Ginies <aginies@mandriva.com> 2.4.3-1mdv2011.0
++ Revision: 606110
+- add missing perl* requires, add OAR batch scheduler API, use included logrotate and crond files, update oar/.ssh/config file, fix oar.conf permission, fix oardodo permission, add new oar_Hulot.pm and window_forker.pm module,
+- oar-2.4.3, fix initscripts (use oar_checkdb), add a drawgantt configuration file
+
+* Fri Feb 26 2010 Guillaume Rousse <guillomovitch@mandriva.org> 2.4.1-1mdv2010.1
++ Revision: 511883
+- new version
+
+* Mon Feb 08 2010 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.5-3mdv2010.1
++ Revision: 502437
+- rely on filetrigger for reloading apache configuration begining with 2010.1, rpm-helper macros otherwise
+
+* Wed Jan 27 2010 Antoine Ginies <aginies@mandriva.com> 2.3.5-2mdv2010.1
++ Revision: 497296
+- bump the release to re-submit to the cluster (build loop on klodia...)
+
+* Wed Jan 27 2010 Antoine Ginies <aginies@mandriva.com> 2.3.5-1mdv2010.1
++ Revision: 497222
+- upload new tarball
+- release 2.3.5
+
+* Sat Jun 27 2009 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.4-1mdv2010.0
++ Revision: 390069
+- new version
+
+* Sat Mar 14 2009 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.3-2mdv2009.1
++ Revision: 355068
+- all packages are noarch
+
+* Sun Dec 21 2008 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.3-1mdv2009.1
++ Revision: 317122
+- new version
+- rediff patch 1
+- drop patches 2, 3, 5 and 6 (merged upstream)
+
+* Fri Sep 05 2008 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.1-6mdv2009.0
++ Revision: 281226
+- fix executables perms and ownership
+- fix drawgantt apache configuration
+- fix man pages syntax
+- fix mysql database creation on utf-8 systems
+
+* Thu Sep 04 2008 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.1-4mdv2009.0
++ Revision: 280458
+- better installation patch
+- add dependencies on ruby-dbi, now it is available
+
+* Thu Aug 14 2008 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.1-3mdv2009.0
++ Revision: 272094
+- various fixes for web package
+
+* Thu Aug 14 2008 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.1-2mdv2009.0
++ Revision: 272026
+- add ruby-gd dependency for web package
+- drop mysql-specific dependencies, as postgresl is also supported, and update post-install instructions
+- fix main directory location in various places
+- fix server wrapper perms
+- fix occurence of buildroot in installed files
+- fix webapps configuration files
+
+* Wed Aug 13 2008 Guillaume Rousse <guillomovitch@mandriva.org> 2.3.1-1mdv2009.0
++ Revision: 271476
+- new version
+  large spec cleanup, based on upstream one
+- use README.urpmi instead of stdout to display post-installations instructions
+- use standard rpm-helper macros for servicce
+- don't requires a local mysql server
+- spec cleanup: drop implicit dependencies
+
+* Wed Jul 30 2008 Thierry Vignaud <tv@mandriva.org> 1.6.2-14mdv2009.0
++ Revision: 254156
+- rebuild
+
+  + Pixel <pixel@mandriva.com>
+    - adapt to %%_localstatedir now being /var instead of /var/lib (#22312)
+
+* Fri Dec 21 2007 Olivier Blin <oblin@mandriva.com> 1.6.2-12mdv2008.1
++ Revision: 136633
+- restore BuildRoot
+
+  + Thierry Vignaud <tv@mandriva.org>
+    - kill re-definition of %%buildroot on Pixel's request
+    - fix man pages
+
+
+* Wed Mar 07 2007 Nicolas Lécureuil <neoclust@mandriva.org> 1.6.2-12mdv2007.1
++ Revision: 134808
+- Fix Group
+
+* Fri Mar 02 2007 Antoine Ginies <aginies@mandriva.com> 1.6.2-11mdv2007.1
++ Revision: 131349
+- remove the -o user -g group in Makefile
+- Import oar
+
+* Wed Nov 08 2006 Antoine Ginies <aginies@mandriva.com> 1.6.2-11mdviggi
+- Add nmap requires
+
+* Fri Nov 03 2006 Antoine Ginies <aginies@mandriva.com> 1.6.2-10mdviggi
+- Change DrawOARGantt cache directory
+
+* Fri Oct 27 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-9mdviggi
+- add an fping require
+
+* Tue Oct 24 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-8mdviggi
+- fix again cache directory
+
+* Wed Oct 18 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-7mdviggi
+- fix cache directory of DrawOARGantt
+- move deploy_node.sh in /usr/sbin
+- adjust oar-server output
+
+* Sun Oct 15 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-6mdviggi
+- laucnh Almighty with oar-server script
+
+* Sun Oct 15 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-5mdviggi
+- fix perm on authorized_keys
+
+* Sat Oct 14 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-4mdviggi
+- fix initscript (no simple way to use daemon)
+
+* Sat Oct 14 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-3mdviggi
+- fix oarstatcmd in DrawGantt conf
+- fix apache sudoers conf
+- fix all user OARcmd access
+- fix OARUSER in sudowrapper.sh script
+
+* Fri Oct 13 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-2mdviggi
+- use oar.sh in /etc/profile.d 
+- fix problem in sudoers OARDIR env
+
+* Tue Oct 10 2006 iggi <iggi@guibux.mandrakesoft.com> 1.6.2-1mdviggi
+- release rc2
+
+* Thu Mar 02 2006 Antoine Ginies <aginies@mandriva.com> 1.6.1-1mdk
+- based on Pierre Neyron spec
+- fix requires
+- fix oar-server service
+- fix use /usr/lib/perl5/vendor_perl/5.8.8 to fix various pb with @INC (oar doesn't use MakeMaker...)
+- move oar.conf to common
+- fix DrawGant cache directory
+- fix DrawGantt path
+- fix defattr
+- fix various chmod
+- fix OARDIR in sudowrapper.sh script
+
+* Wed May 11 2005 Pierre Lombard <pl@icatis.com> 1.6-1
+- New upstream version.
+
+* Fri Feb 04 2005 Sebastien Georget <sebastien.georget@sophia.inria.fr> 1.4-1
+- Update dependencies, change Source0 and %%setup to use default oar distribution
+
+* Thu Jul 01 2004 Pierre Neyron <pierre.neyron@imag.fr> 1.0-1
+- First RPM package
 

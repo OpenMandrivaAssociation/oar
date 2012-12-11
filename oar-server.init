@@ -1,0 +1,97 @@
+#!/bin/sh
+
+# chkconfig: 345 99 01
+
+### BEGIN INIT INFO
+# Provides: oar-server
+# Required-Start: $network
+# Required-Stop: $network
+# Default-Start: 345
+# Short-Description: Start/Stop the oar server daemon
+# Description: OAR is a resource manager (or batch scheduler) for large computing clusters
+### END INIT INFO
+
+RETVAL=0
+DAEMON=/usr/sbin/oar-server
+DESC=oar-server
+PIDFILE=/var/run/oar-server.pid
+CONFIG=/etc/oar/oar.conf
+OARDIR=/usr/share/oar
+
+test -x $DAEMON || exit 0
+
+# Source function library.
+. /etc/init.d/functions
+
+# Set sysconfig settings
+[ -f /etc/sysconfig/oar-server ] && . /etc/sysconfig/oar-server
+
+echo "Please adjust ALLOWED_NETWORKS and SERVER_HOSTNAME in $CONFIG"
+echo "Add all user in oar group if you want them to submit jobs:"
+echo "usermod -g oar user_name"
+echo
+
+sql_init_error_msg (){
+  echo
+  echo "OAR database seems to be unreachable." 
+  echo "Did you forget to initialize it or to configure the oar.conf file?"
+  echo "See http://oar.imag.fr/docs/manual.html#configuration-of-the-cluster for more infos"
+  exit 1
+}
+
+start() {
+        echo -n "Starting $DESC: "
+        daemon $DAEMON $DAEMON_OPTS && success || failure
+        RETVAL=$?
+        echo
+}
+stop() {
+        echo -n "Stopping $DESC: "
+        if [ -n "`pidfileofproc $DAEMON`" ]; then
+            killproc $DAEMON
+            sleep 1
+            killall Almighty 2>/dev/null
+            sleep 1
+            killall -9 Almighty 2>/dev/null
+            RETVAL=3
+        else
+            failure $"Stopping $DESC"
+        fi
+        RETVAL=$?
+        echo
+}
+
+case "$1" in
+  start)
+        CHECK_STRING=`oar_checkdb 2>&1`
+        if [ "$?" -ne "0" ]
+        then
+          echo
+          echo "  Database is not ready! Maybe not initiated or no DBMS running?"
+          echo "  You must have a running MySQL or Postgres server."
+          echo "  To init the DB, run oar_mysql_db_init or oar_psql_db_init"
+          echo "  Also check the DB_* variables in /etc/oar/oar.conf"
+          echo -n "  The error was: "
+          echo $CHECK_STRING
+	  sql_init_error_msg
+          exit 1
+	fi
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|force-reload|restart)
+        stop
+        sleep 1
+        start
+        ;;
+  status)
+        status $DAEMON
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|status|restart}"
+        RETVAL=3
+esac
+exit $RETVAL
+
