@@ -1,6 +1,6 @@
 Name:		oar
 Version:	2.4.3
-Release:	3
+Release:	4
 Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
@@ -144,8 +144,8 @@ perl -pi \
      %{buildroot}%{_sysconfdir}/%{name}/oar.conf
 
 # apache configuration
-install -d -m 755 %{buildroot}%{webappconfdir}
-cat > %{buildroot}%{webappconfdir}/%{name}.conf <<EOF
+install -d -m 755 %{buildroot}%{_webappconfdir}
+cat > %{buildroot}%{_webappconfdir}/%{name}.conf <<EOF
 Alias /monika %{_var}/www/%{name}/monika
 Alias /drawgantt %{_var}/www/%{name}/drawgantt
 Alias /oarapi %{_var}/www/%{name}/oarapi
