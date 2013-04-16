@@ -1,9 +1,6 @@
-%define version 2.4.3
-%define release: 3
-	
 Name:		oar
-Version:	%{version}
-Release:	%{release}
+Version:	2.4.3
+Release:	3
 Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
@@ -17,7 +14,6 @@ Patch0:		oar-2.4.4-drawgantt.php.patch
 #Patch4: 	oar-2.4.1-monika-fhs.patch
 BuildRequires:	python-docutils
 BuildArch: 	noarch
-BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description 
 This is OAR Batch Scheduler
