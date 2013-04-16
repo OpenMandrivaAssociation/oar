@@ -1,5 +1,5 @@
 %define version 2.4.3
-%define release %mkrel 1
+%define release: 2
 	
 Name:		oar
 Version:	%{version}
@@ -307,15 +307,7 @@ fi
 %preun node
 %_preun_service oar-node
 
-%post web-status
-%if %mdkversion < 201010
-%_post_webapp
-%endif
 
-%preun web-status
-%if %mdkversion < 201010
-%_postun_webapp
-%endif
 
 %files common
 %doc COPYING CHANGELOG AUTHORS TODO README
