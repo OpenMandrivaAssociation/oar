@@ -1,5 +1,5 @@
 %define version 2.4.3
-%define release: 2
+%define release: 3
 	
 Name:		oar
 Version:	%{version}
