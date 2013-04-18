@@ -1,6 +1,6 @@
 Name:		oar
 Version:	2.4.3
-Release:	4
+Release:	3
 Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
@@ -10,6 +10,7 @@ Source1:	oar-server.init
 Source2:	oar-node.init
 Source3:	oar-server.sysconfig
 Source4:	oar-node.sysconfig
+Source5:	oar.rpmlintrc
 Patch0:		oar-2.4.4-drawgantt.php.patch
 #Patch4: 	oar-2.4.1-monika-fhs.patch
 BuildRequires:	python-docutils
@@ -144,8 +145,8 @@ perl -pi \
      %{buildroot}%{_sysconfdir}/%{name}/oar.conf
 
 # apache configuration
-install -d -m 755 %{buildroot}%{_webappconfdir}
-cat > %{buildroot}%{_webappconfdir}/%{name}.conf <<EOF
+install -d -m 755 %{buildroot}%{webappconfdir}
+cat > %{buildroot}%{webappconfdir}/%{name}.conf <<EOF
 Alias /monika %{_var}/www/%{name}/monika
 Alias /drawgantt %{_var}/www/%{name}/drawgantt
 Alias /oarapi %{_var}/www/%{name}/oarapi
