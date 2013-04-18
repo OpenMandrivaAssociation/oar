@@ -1,1 +1,3 @@
 addFilter(".* non-standard-executable-perm")
+addFilter(".* setuid-binary")
+addFilter(".* setgid-binary")
