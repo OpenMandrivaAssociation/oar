@@ -1,6 +1,6 @@
 Name:		oar
 Version:	2.4.3
-Release:	3
+Release:	4
 Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
@@ -154,30 +154,26 @@ Alias /oarapi %{_var}/www/%{name}/oarapi
 <Directory %{_var}/www/%{name}/monika>
     Options ExecCGI
     DirectoryIndex monika.cgi
-    Order allow,deny
-    Allow from all
+    Require all granted
 </Directory>
 
 <Directory %{_var}/www/%{name}/drawgantt>
     Options ExecCGI FollowSymlinks
     DirectoryIndex drawgantt.cgi
-    Order allow,deny
-    Allow from all
+    Require all granted
 </Directory>
 
 <Directory %{_var}/www/%{name}/oarapi>
     Options ExecCGI FollowSymlinks
     DirectoryIndex oarapi.cgi
-    Order allow,deny
-    Allow from all
+    Require all granted
 </Directory>
 EOF
 
 install -d -m 755 %{buildroot}%{_var}/www/%{name}/drawgantt
 cat > %{buildroot}%{_var}/www/%{name}/drawgantt/.htaccess<<EOF
 <Files "config.php">
-Order Allow,Deny
-Deny from All
+Require all denied
 </Files>
 EOF
 
