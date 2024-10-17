@@ -4,7 +4,7 @@ Release:	5
 Summary:	OAR Batch Scheduler
 License:	GPL
 Group:		System/Servers
-Url:		http://oar.imag.fr
+Url:		https://oar.imag.fr
 Source0:	https://gforge.inria.fr/frs/download.php/24906/%{name}-%version.tar.bz2
 Source1:	oar-server.init
 Source2:	oar-node.init
